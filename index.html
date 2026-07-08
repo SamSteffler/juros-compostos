@@ -1,0 +1,461 @@
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Juros Compostos</title>
+    <meta name="description" content="Uma calculadora de juros compostos completa.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css?v=7">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                <h1>Juros Compostos</h1>
+            </div>
+        </header>
+        
+        <div class="market-rates-banner" id="market-rates-banner">
+            <span class="pulse-dot"></span> Buscando taxas de mercado...
+        </div>
+
+        <main class="app-content">
+            <!-- Left Column: Inputs -->
+            <section class="input-section glass-panel">
+                
+                <!-- Compound Interest Form -->
+                <form id="compound-interest-form" class="calculator-form active">
+                    <div class="form-group">
+                        <label for="ci-principal">Capital Inicial (R$)</label>
+                        <input type="number" id="ci-principal" value="10000" min="0" step="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ci-rate-type">Tipo de Taxa</label>
+                        <select id="ci-rate-type">
+                            <option value="fixed" selected>Prefixada</option>
+                            <option value="cdi">% do CDI</option>
+                            <option value="selic">SELIC + Fixa</option>
+                            <option value="ipca">IPCA + Fixa</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label id="ci-rate-label" for="ci-rate">Valor (%)</label>
+                            <input type="number" id="ci-rate" value="10" min="0" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ci-rate-freq">Frequência</label>
+                            <select id="ci-rate-freq">
+                                <option value="1" selected>Anual</option>
+                                <option value="2">Semestral</option>
+                                <option value="4">Trimestral</option>
+                                <option value="6">Bimestral</option>
+                                <option value="12">Mensal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ci-years">Tempo</label>
+                            <input type="number" id="ci-years" value="10" min="0.1" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ci-time-freq">Unidade</label>
+                            <select id="ci-time-freq">
+                                <option value="1" selected>Anos</option>
+                                <option value="2">Semestres</option>
+                                <option value="12">Meses</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ci-compound-freq">Capitalização</label>
+                        <select id="ci-compound-freq">
+                            <option value="1">Anual</option>
+                            <option value="2">Semestral</option>
+                            <option value="4">Trimestral</option>
+                            <option value="12" selected>Mensal</option>
+                            <option value="365">Diária</option>
+                        </select>
+                    </div>
+                                   <div class="divider">Aportes Periódicos</div>
+                    <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
+                        <input type="checkbox" id="ci-has-deposit">
+                        <label for="ci-has-deposit">Incluir aportes periódicos</label>
+                    </div>
+                    <div id="ci-deposit-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ci-deposit">Valor do Aporte (R$)</label>
+                                <input type="number" id="ci-deposit" value="500" min="0" step="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="ci-deposit-freq">Frequência</label>
+                                <select id="ci-deposit-freq">
+                                    <option value="1">Anual</option>
+                                    <option value="2">Semestral</option>
+                                    <option value="4">Trimestral</option>
+                                    <option value="6">Bimestral</option>
+                                    <option value="12" selected>Mensal</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="ci-deposit-timing" checked>
+                            <label for="ci-deposit-timing">Aportes no final do período</label>
+                        </div>
+                    </div>
+
+                    <div class="divider">Impostos</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ci-tax-preset">Tributação</label>
+                            <select id="ci-tax-preset">
+                                <option value="manual">Manual</option>
+                                <option value="br-regressiva">Tabela Regressiva (BR)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="ci-tax-rate-group">
+                            <label for="ci-tax-rate">Alíquota (%)</label>
+                            <input type="number" id="ci-tax-rate" value="0" min="0" max="100" step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-group checkbox-group" id="ci-tax-annual-group">
+                        <input type="checkbox" id="ci-tax-annual">
+                        <label for="ci-tax-annual">Descontar impostos anualmente (vs. no final)</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Calcular</button>
+                </form>
+
+                <!-- Simple Interest Form -->
+                <form id="simple-interest-form" class="calculator-form hidden">
+                    <div class="form-group">
+                        <label for="si-principal">Capital (R$)</label>
+                        <input type="number" id="si-principal" value="10000" min="0" step="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="si-rate-type">Tipo de Taxa</label>
+                        <select id="si-rate-type">
+                            <option value="fixed" selected>Prefixada</option>
+                            <option value="cdi">% do CDI</option>
+                            <option value="selic">% da SELIC</option>
+                            <option value="ipca">IPCA + Fixa</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label id="si-rate-label" for="si-rate">Valor (%)</label>
+                            <input type="number" id="si-rate" value="10" min="0" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="si-rate-freq">Frequência</label>
+                            <select id="si-rate-freq">
+                                <option value="1" selected>Anual</option>
+                                <option value="2">Semestral</option>
+                                <option value="4">Trimestral</option>
+                                <option value="6">Bimestral</option>
+                                <option value="12">Mensal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="si-years">Tempo</label>
+                            <input type="number" id="si-years" value="5" min="0.1" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="si-time-freq">Unidade</label>
+                            <select id="si-time-freq">
+                                <option value="1" selected>Anos</option>
+                                <option value="2">Semestres</option>
+                                <option value="12">Meses</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="divider">Aportes Periódicos</div>
+                    <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
+                        <input type="checkbox" id="si-has-deposit">
+                        <label for="si-has-deposit">Incluir aportes periódicos</label>
+                    </div>
+                    <div id="si-deposit-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="si-deposit">Valor do Aporte (R$)</label>
+                                <input type="number" id="si-deposit" value="500" min="0" step="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="si-deposit-freq">Frequência</label>
+                                <select id="si-deposit-freq">
+                                    <option value="1">Anual</option>
+                                    <option value="2">Semestral</option>
+                                    <option value="4">Trimestral</option>
+                                    <option value="6">Bimestral</option>
+                                    <option value="12" selected>Mensal</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Calcular</button>
+                </form>
+
+                <!-- Time to Goal Form -->
+                <form id="time-to-goal-form" class="calculator-form hidden">
+                    <div class="form-group">
+                        <label for="tg-target">Valor da Meta (R$)</label>
+                        <input type="number" id="tg-target" value="1000000" min="0" step="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tg-principal">Capital Inicial (R$)</label>
+                        <input type="number" id="tg-principal" value="10000" min="0" step="100" required>
+                    </div>
+                    <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
+                        <input type="checkbox" id="tg-has-deposit" checked>
+                        <label for="tg-has-deposit">Incluir aportes periódicos</label>
+                    </div>
+                    <div id="tg-deposit-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tg-deposit">Valor do Aporte (R$)</label>
+                                <input type="number" id="tg-deposit" value="500" min="0" step="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="tg-deposit-freq">Freq. do Aporte</label>
+                                <select id="tg-deposit-freq">
+                                    <option value="1">Anual</option>
+                                    <option value="2">Semestral</option>
+                                    <option value="4">Trimestral</option>
+                                    <option value="6">Bimestral</option>
+                                    <option value="12" selected>Mensal</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tg-rate">Taxa de Juros (%)</label>
+                            <input type="number" id="tg-rate" value="7" min="0" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tg-rate-freq">Freq. da Taxa</label>
+                            <select id="tg-rate-freq">
+                                <option value="1" selected>Anual</option>
+                                <option value="2">Semestral</option>
+                                <option value="4">Trimestral</option>
+                                <option value="6">Bimestral</option>
+                                <option value="12">Mensal</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="divider">Impostos</div>
+                    <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
+                        <input type="checkbox" id="tg-has-tax">
+                        <label for="tg-has-tax">Atingir meta líquida (descontando impostos)</label>
+                    </div>
+                    <div id="tg-tax-section" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tg-tax-preset">Tributação</label>
+                                <select id="tg-tax-preset">
+                                    <option value="manual">Manual</option>
+                                    <option value="br-regressiva">Tabela Regressiva (BR)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="tg-tax-rate-group">
+                                <label for="tg-tax-rate">Alíquota (%)</label>
+                                <input type="number" id="tg-tax-rate" value="15" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Calcular</button>
+                </form>
+
+                <!-- Rate to Goal Form -->
+                <form id="rate-to-goal-form" class="calculator-form hidden">
+                    <div class="form-group">
+                        <label for="rg-target">Valor da Meta (R$)</label>
+                        <input type="number" id="rg-target" value="1000000" min="0" step="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rg-principal">Capital Inicial (R$)</label>
+                        <input type="number" id="rg-principal" value="10000" min="0" step="100" required>
+                    </div>
+                    <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
+                        <input type="checkbox" id="rg-has-deposit" checked>
+                        <label for="rg-has-deposit">Incluir aportes periódicos</label>
+                    </div>
+                    <div id="rg-deposit-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rg-deposit">Valor do Aporte (R$)</label>
+                                <input type="number" id="rg-deposit" value="500" min="0" step="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="rg-deposit-freq">Freq. do Aporte</label>
+                                <select id="rg-deposit-freq">
+                                    <option value="1">Anual</option>
+                                    <option value="2">Semestral</option>
+                                    <option value="4">Trimestral</option>
+                                    <option value="6">Bimestral</option>
+                                    <option value="12" selected>Mensal</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rg-years">Tempo</label>
+                            <input type="number" id="rg-years" value="20" min="0.1" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="rg-time-freq">Unidade</label>
+                            <select id="rg-time-freq">
+                                <option value="1" selected>Anos</option>
+                                <option value="2">Semestres</option>
+                                <option value="12">Meses</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="rg-rate-freq">Exibir Taxa</label>
+                        <select id="rg-rate-freq">
+                            <option value="1" selected>Anual</option>
+                            <option value="12">Mensal</option>
+                        </select>
+                    </div>
+
+                    <div class="divider">Impostos</div>
+                    <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
+                        <input type="checkbox" id="rg-has-tax">
+                        <label for="rg-has-tax">Atingir meta líquida (descontando impostos)</label>
+                    </div>
+                    <div id="rg-tax-section" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rg-tax-preset">Tributação</label>
+                                <select id="rg-tax-preset">
+                                    <option value="manual">Manual</option>
+                                    <option value="br-regressiva">Tabela Regressiva (BR)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="rg-tax-rate-group">
+                                <label for="rg-tax-rate">Alíquota (%)</label>
+                                <input type="number" id="rg-tax-rate" value="15" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Calcular</button>
+                </form>
+
+            </section>
+
+            <!-- Right Column: Results & Charts -->
+            <section class="results-section">
+                
+                <div id="print-report-header" class="hidden">
+                    <h2>Relatório de Simulação Financeira</h2>
+                    <p id="print-date" class="subtitle"></p>
+                    <div class="divider">Parâmetros Utilizados</div>
+                    <ul id="print-parameters-list"></ul>
+                    <div class="divider">Resultados</div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="card glass-panel highlight">
+                        <h3>Montante Líquido</h3>
+                        <div class="value" id="result-net-balance">R$ 0,00</div>
+                    </div>
+                    <div class="card glass-panel">
+                        <h3>Montante Bruto</h3>
+                        <div class="value" id="result-gross-balance">R$ 0,00</div>
+                    </div>
+                    <div class="card glass-panel">
+                        <h3>Juros Líquidos</h3>
+                        <div class="value" id="result-net-interest">R$ 0,00</div>
+                    </div>
+                    <div class="card glass-panel">
+                        <h3>Capital Inicial</h3>
+                        <div class="value" id="result-initial-principal">R$ 0,00</div>
+                    </div>
+                    <div class="card glass-panel">
+                        <h3>Total de Aportes</h3>
+                        <div class="value" id="result-deposits">R$ 0,00</div>
+                    </div>
+                    <div class="card glass-panel">
+                        <h3>Impostos e Tributos</h3>
+                        <div class="value" id="result-tax">R$ 0,00</div>
+                        <div class="sub-value" id="result-tax-rate">Alíquota: 0%</div>
+                    </div>
+                </div>
+
+                <!-- Goal Results Panel (Hidden by default) -->
+                <div id="goal-result-panel" class="glass-panel hidden highlight-panel">
+                    <h3 id="goal-result-title">Tempo Necessário</h3>
+                    <div class="value massive" id="goal-result-value">0 Anos</div>
+                </div>
+
+                <!-- Charts Container -->
+                <div class="charts-container glass-panel">
+                    <div class="chart-header">
+                        <h2>Evolução e Distribuição</h2>
+                        <div class="chart-actions">
+                            <button id="btn-export-pdf" class="btn-secondary" title="Export as PDF/Print">Exportar Relatório</button>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-wrapper">
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                        <div class="chart-wrapper pie-wrapper">
+                            <canvas id="breakdownChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="tools-nav bottom-nav">
+            <button class="nav-btn active" data-target="compound-interest">
+                <div class="icon-placeholder"></div>
+                <span>Compostos</span>
+            </button>
+            <button class="nav-btn" data-target="simple-interest">
+                <div class="icon-placeholder"></div>
+                <span>Simples</span>
+            </button>
+            <button class="nav-btn" data-target="time-to-goal">
+                <div class="icon-placeholder"></div>
+                <span>T. Meta</span>
+            </button>
+            <button class="nav-btn" data-target="rate-to-goal">
+                <div class="icon-placeholder"></div>
+                <span>Taxa Meta</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Application Logic -->
+    <script src="js/main.js?v=7"></script>
+</body>
+</html>
