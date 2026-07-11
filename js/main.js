@@ -1,7 +1,7 @@
-// main.js - Consolidated application logic (No modules to avoid CORS on file://)
+// main.js - Wrapper de todas as funções principais da página
 
 // ==========================================
-// 1. Core Financial Calculations (math.js)
+// 1. Funções de cálculo de juros
 // ==========================================
 
 function calculateCompoundInterest({
@@ -93,7 +93,7 @@ function calculateSimpleInterest(principal, annualRate, years, depositAmount = 0
     let currentPrincipal = principal;
     let totalInterest = 0;
     
-    // Simulate month by month to build schedule and handle partial year deposits easily
+    // simulação mensal
     const simPeriods = Math.round(years * 12); 
     const monthlyRate = rateDecimal / 12;
     
@@ -102,17 +102,17 @@ function calculateSimpleInterest(principal, annualRate, years, depositAmount = 0
     else if (simPeriods <= 60) reportIntervalMonths = 3;
     else if (simPeriods <= 120) reportIntervalMonths = 6;
     
-    // If 0 years, just return initial
+    // valor inicial para zero anos/meses
     if (simPeriods === 0) {
         schedule.push({ month: 0, year: 0, balance: principal, totalPrincipal: principal, cumulativeInterest: 0, cumulativeTax: 0 });
     }
 
     for (let month = 1; month <= simPeriods; month++) {
-        // Interest is calculated ONLY on the principal, not on previously accumulated interest
+        // Juros sobre o capítal inicial apenas
         let interestThisMonth = currentPrincipal * monthlyRate;
         totalInterest += interestThisMonth;
         
-        // Handle deposits (Assuming End of Period)
+        // Aportes mensais
         let isDepositMonth = (month % (12 / depositFreq)) === 0;
         if (isDepositMonth) {
             currentPrincipal += depositAmount;
@@ -144,7 +144,7 @@ function calculateTimeToGoal(target, principal, depositAmount, depositFreq, annu
     let months = 0;
     const monthlyRate = (annualRate / 100) / 12;
     
-    // Failsafe: check if balance is growing enough (approximate)
+    // Verificar se o saldo é suficiente para bater a meta
     if (balance * monthlyRate + (depositAmount * (depositFreq / 12)) <= 0 && target > principal) {
         return -1; 
     }
@@ -189,7 +189,7 @@ function calculateTimeToGoal(target, principal, depositAmount, depositFreq, annu
 
 function calculateRateToGoal(target, principal, depositAmount, depositFreq, years, taxEnabled = false, taxPreset = 'manual', taxRateVal = 0) {
     const totalMonths = years * 12;
-    // Max input checking
+    // Verifica se não será depositado mais do que a meta (não precisa de juros)
     if (target <= principal + (depositAmount * depositFreq * years)) {
         return 0;
     }
@@ -247,7 +247,7 @@ function calculateRateToGoal(target, principal, depositAmount, depositFreq, year
 
 
 // ==========================================
-// 2. Chart Rendering (chartSetup.js)
+// 2. Renderização dos gráficos
 // ==========================================
 
 let growthChartInstance = null;
@@ -392,7 +392,7 @@ function renderCharts(schedule, breakdown) {
 
 
 // ==========================================
-// 3. UI Logic, API Fetching and Events
+// 3. Lógica de UI e calls de API
 // ==========================================
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -407,21 +407,21 @@ const marketRates = {
 async function fetchMarketRates() {
     const banner = document.getElementById('market-rates-banner');
     try {
-        // CDI (Taxa DI)
+        // CDI (Taxa DI, a.a.)
         const cdiUrl = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.4389/dados/ultimos/1?formato=json';
         const cdiRes = await fetch(cdiUrl);
         if (!cdiRes.ok) throw new Error(`HTTP error! status: ${cdiRes.status}`);
         const cdiData = await cdiRes.json();
         if (cdiData && cdiData[0]) marketRates.cdi = parseFloat(cdiData[0].valor);
 
-        // Selic Target (Meta Selic)
+        // Taxa Selic (a.a.)
         const selicUrl = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json';
         const selicRes = await fetch(selicUrl);
         if (!selicRes.ok) throw new Error(`HTTP error! status: ${selicRes.status}`);
         const selicData = await selicRes.json();
         if (selicData && selicData[0]) marketRates.selic = parseFloat(selicData[0].valor);
 
-        // IPCA (12 months accumulated)
+        // IPCA (a.a.)
         const ipcaUrl = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/1?formato=json';
         const ipcaRes = await fetch(ipcaUrl);
         if (!ipcaRes.ok) throw new Error(`HTTP error! status: ${ipcaRes.status}`);
@@ -430,7 +430,7 @@ async function fetchMarketRates() {
 
         marketRates.fetched = true;
         
-        // Save to LocalStorage for offline fallback
+        // Armazena localmente para usar offline
         localStorage.setItem('cachedMarketRates', JSON.stringify(marketRates));
         localStorage.setItem('cachedMarketRatesTime', new Date().getTime());
 
@@ -438,7 +438,7 @@ async function fetchMarketRates() {
             banner.innerHTML = `<span class="pulse-dot success"></span> SELIC: ${marketRates.selic.toFixed(2).replace('.',',')}% | CDI: ${marketRates.cdi.toFixed(2).replace('.',',')}% | IPCA: ${marketRates.ipca.toFixed(2).replace('.',',')}%`;
         }
         
-        // Re-trigger calculation to update values if needed
+        // recalcula tudo com novas taxas caso exista
         const activeForm = document.querySelector('.calculator-form.active');
         if (activeForm && activeForm.checkValidity()) {
             activeForm.dispatchEvent(new Event('submit'));
@@ -446,7 +446,7 @@ async function fetchMarketRates() {
     } catch (error) {
         console.error("Erro ao buscar taxas do BCB:", error);
         
-        // Try recovering from LocalStorage
+        // Busca do LocalStorage
         const cachedStr = localStorage.getItem('cachedMarketRates');
         if (cachedStr) {
             try {
@@ -476,7 +476,7 @@ async function fetchMarketRates() {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Register Service Worker for PWA
+    // Service Worker para PWA
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('Service Worker Registrado!', reg))
@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     fetchMarketRates();
 
-    // --- Navigation Tabs ---
+    // --- Abas ---
     const navBtns = document.querySelectorAll('.nav-btn');
     const forms = document.querySelectorAll('.calculator-form');
     const goalPanel = document.getElementById('goal-result-panel');
@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Forms Setup ---
+    // --- Formulários ---
     const ciForm = document.getElementById('compound-interest-form');
     const siForm = document.getElementById('simple-interest-form');
     const tgForm = document.getElementById('time-to-goal-form');
@@ -538,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Deposit Toggles ---
+    // --- Aportes ---
     ['ci', 'si', 'tg', 'rg'].forEach(prefix => {
         const checkbox = document.getElementById(`${prefix}-has-deposit`);
         const section = document.getElementById(`${prefix}-deposit-section`);
@@ -557,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Tax Preset Logic ---
+    // --- Dedução de impostos na fonte (p/ juros simples e compostos) ---
     document.getElementById('ci-tax-preset').addEventListener('change', (e) => {
         const rateGroup = document.getElementById('ci-tax-rate-group');
         const annualGroup = document.getElementById('ci-tax-annual-group');
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ciForm.checkValidity()) handleCalculation(ciForm.id);
     });
 
-    // --- Tax Toggle Logic for TG and RG ---
+    // --- Dedução de impostos na fonte (p/ meta de tempo e taxa) ---
     ['tg', 'rg'].forEach(prefix => {
         const checkbox = document.getElementById(`${prefix}-has-tax`);
         const section = document.getElementById(`${prefix}-tax-section`);
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Calculation Handler ---
+    // --- Calcula tudo ---
     function handleCalculation(formId) {
         if (formId === 'compound-interest-form') {
             const principal = parseFloat(document.getElementById('ci-principal').value);
@@ -601,11 +601,13 @@ document.addEventListener('DOMContentLoaded', () => {
             let userRate = parseFloat(document.getElementById('ci-rate').value);
             
             if (rateType === 'cdi') {
+                // para investimentos % do CDI
                 userRate = (userRate / 100) * marketRates.cdi;
             } else if (rateType === 'selic') {
+                // para investimentos Selic + Fixa
                 userRate = ((1 + marketRates.selic / 100) * (1 + userRate / 100) - 1) * 100;
             } else if (rateType === 'ipca') {
-                // Compositing IPCA and Fixed rate
+                // Para investimentos IPCA + Fixa
                 userRate = ((1 + marketRates.ipca / 100) * (1 + userRate / 100) - 1) * 100;
             }
 
@@ -849,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const rateEl = document.getElementById('result-tax-rate');
         if (data.taxRate > 0) {
-            // Remove the .0 if it's an integer (e.g., 20.0% -> 20%)
+            // Números inteiros tratados como inteiros
             rateEl.textContent = `Alíquota Aplicada: ${data.taxRate.toFixed(1).replace('.0', '')}%`;
             rateEl.classList.remove('hidden');
         } else {
@@ -863,9 +865,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Gráficos já possuem excelente contraste de fábrica.
-        // Basta disparar a impressão nativa e deixar que o CSS 
-        // arrume o grid para a folha A4.
         window.print();
     });
 

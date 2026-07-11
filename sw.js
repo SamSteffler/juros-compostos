@@ -34,19 +34,18 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests, except for the CDN assets we specifically cached
+  // pula CORS requests e assets que nao estao na lista de cache
   if (!event.request.url.startsWith(self.location.origin) &&
       !ASSETS_TO_CACHE.includes(event.request.url)) {
-      // For BCB API requests, we don't cache them in the SW cache, 
-      // instead we handle them via localStorage in main.js
+      // cache do BCB fica armazenado em localstorage
       return;
   }
 
-  // Network First, falling back to cache strategy for local assets
+  // fallback para localstorage no caso de nao conexao com a internet
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Cache the latest version
+        // cache caso bem sucedido
         const responseClone = networkResponse.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseClone);

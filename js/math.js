@@ -1,7 +1,7 @@
-// math.js - Core financial calculations
+// math.js - Cálculos financeiros essenciais
 
 /**
- * Calculates Compound Interest with periodic deposits and taxes.
+ * Juros compostos com depósitos periódicos e dedução de impostos
  */
 export function calculateCompoundInterest({
     principal,
@@ -17,36 +17,33 @@ export function calculateCompoundInterest({
     const rateDecimal = annualRate / 100;
     const taxDecimal = taxRate / 100;
     
-    // We'll simulate this year by year to handle annual taxes properly and generate a schedule.
+    // Schedules terão unidade de tempo em anos, mas a simulação será feita mês a mês para maior precisão
     let schedule = [];
     let currentBalance = principal;
     let totalPrincipal = principal;
     let totalInterest = 0;
     let totalTaxPaid = 0;
     
-    // For simpler calculation without annual tax deduction, use standard formulas, 
-    // but for schedule generation, iterative approach is better.
+    // Simulação iterativa é necessaria para simular a evolução do saldo e montante parcial
     
     const monthsPerYear = 12;
     const totalMonths = years * 12;
     const compoundPeriodsPerYear = compoundFreq;
     const depositsPerYear = depositFreq;
     
-    // Monthly simulation step
+    // Passo de simulaão
     let monthlyRate = rateDecimal / 12;
-    // However, if compounding is not monthly, effective monthly rate differs.
-    // Standard formula: rate per period = rate / compoundFreq.
+    // capitalização em uma taxa diferente dos juros e depósitos precisa ser convertido para uma taxa efetiva mensal
     
-    // Let's do a granular period simulation based on the highest frequency (usually monthly deposits).
-    // To be precise and support daily/monthly/quarterly/annually, we simulate monthly.
-    const simPeriods = years * 12; // Simulate month by month
+    // Simulacao sera realizada mes a mes
+    const simPeriods = years * 12; // Duração em meses
     
     for (let month = 1; month <= simPeriods; month++) {
         let startBalance = currentBalance;
         let interestThisMonth = 0;
         let depositThisMonth = 0;
         
-        // Handle Deposit
+        // Aportes
         let isDepositMonth = (month % (12 / depositsPerYear)) === 0;
         if (isDepositMonth && !depositAtEnd) {
             currentBalance += depositAmount;
@@ -54,34 +51,31 @@ export function calculateCompoundInterest({
             totalPrincipal += depositAmount;
         }
         
-        // Handle Interest
-        // Calculate interest based on compounding frequency.
-        // E.g., if compounding quarterly, we add interest every 3 months based on balance.
-        // A more standard approach is calculating an effective monthly rate for the simulation:
+        // converte a unidade de tempo e valor da taxa com base na taxa de capitalização (compounding frequency)
         let effectiveMonthlyRate = Math.pow(1 + rateDecimal / compoundFreq, compoundFreq / 12) - 1;
         interestThisMonth = currentBalance * effectiveMonthlyRate;
         currentBalance += interestThisMonth;
         totalInterest += interestThisMonth;
         
-        // Handle Deposit (End of period)
+        // Aporte ao final do período
         if (isDepositMonth && depositAtEnd) {
             currentBalance += depositAmount;
             depositThisMonth += depositAmount;
             totalPrincipal += depositAmount;
         }
         
-        // Handle Annual Taxes
+        // Taxas anuais
         let taxThisMonth = 0;
         let isYearEnd = (month % 12) === 0;
         if (taxAnnually && isYearEnd) {
-            // Tax is applied to the interest earned this year
+            // Taxa sobre os juros acumulados do ano
             let interestThisYear = totalInterest - (schedule.length > 0 ? schedule[schedule.length-1].cumulativeInterest : 0);
             taxThisMonth = interestThisYear * taxDecimal;
             currentBalance -= taxThisMonth;
             totalTaxPaid += taxThisMonth;
         }
 
-        // Save Annual Data Point for charts (or monthly if needed, but annual is better for long charts)
+        // Pontos de evolução anuais para plotar gráficos com muitos anos de período
         if (isYearEnd || month === simPeriods) {
             schedule.push({
                 year: month / 12,
@@ -93,13 +87,13 @@ export function calculateCompoundInterest({
         }
     }
 
-    // Handle tax at the end if not annual
+    // Impostos retidos no saque em vez de anualmente
     if (!taxAnnually && taxRate > 0) {
         let finalTax = totalInterest * taxDecimal;
         currentBalance -= finalTax;
         totalTaxPaid = finalTax;
         
-        // Update the final schedule point
+        // ultimo ponto do schedule com impostos deduzidos ja
         let lastPoint = schedule[schedule.length - 1];
         lastPoint.balance = currentBalance;
         lastPoint.cumulativeTax = totalTaxPaid;
@@ -115,7 +109,7 @@ export function calculateCompoundInterest({
 }
 
 /**
- * Calculates Simple Interest
+ * Juros simples
  */
 export function calculateSimpleInterest(principal, annualRate, years) {
     const interest = principal * (annualRate / 100) * years;
@@ -127,38 +121,38 @@ export function calculateSimpleInterest(principal, annualRate, years) {
 }
 
 /**
- * Estimates Time to reach a Goal using PMT and PV formulas (approximation)
+ * Estimativa de tempo necessário para atingir um montante alvo com base em capital inicial, aportes e taxa de juros
  */
 export function calculateTimeToGoal(target, principal, monthlyDeposit, annualRate) {
     // FV = PV * (1+r)^n + PMT * [((1+r)^n - 1) / r]
-    // Solving for n is complex, we will iteratively solve it month by month
+    // Solução iterativa sobre meses
     
     let balance = principal;
     let months = 0;
     const monthlyRate = (annualRate / 100) / 12;
     
-    // Failsafe: if interest + deposit is <= 0 and target > principal
+    // Evita aportes negativos ou taxa negativa
     if (balance * monthlyRate + monthlyDeposit <= 0 && target > principal) {
-        return -1; // Will never reach
+        return -1; 
     }
 
-    // Cap at 100 years to prevent infinite loops
+    // impossível caso passar de 100 anos
     while (balance < target && months < 1200) {
         balance += balance * monthlyRate;
         balance += monthlyDeposit;
         months++;
     }
 
-    return months / 12; // Return in years
+    return months / 12; // Retorno em anos
 }
 
 /**
- * Estimates Rate needed to reach a Goal using binary search approximation
+ * Estima taxa para atingir um montante com base em capital inicial, aportes e período
  */
 export function calculateRateToGoal(target, principal, monthlyDeposit, years) {
     const months = years * 12;
     
-    // If target is less than total input, rate is negative or 0
+    // Taxa zero para investimento + aporte maior que meta ao final do período
     if (target <= principal + (monthlyDeposit * months)) {
         return 0;
     }
@@ -167,8 +161,8 @@ export function calculateRateToGoal(target, principal, monthlyDeposit, years) {
     let highRate = 1.0; // 100%
     let estimatedRate = 0.05;
     
-    // Binary search for the rate
-    for (let i = 0; i < 50; i++) { // 50 iterations is more than enough for precision
+    // Busca binária da taxa
+    for (let i = 0; i < 50; i++) {
         estimatedRate = (lowRate + highRate) / 2;
         let monthlyRate = estimatedRate / 12;
         
@@ -185,5 +179,5 @@ export function calculateRateToGoal(target, principal, monthlyDeposit, years) {
         }
     }
     
-    return estimatedRate * 100; // Return as percentage
+    return estimatedRate * 100; // Retorna como porcentagem
 }

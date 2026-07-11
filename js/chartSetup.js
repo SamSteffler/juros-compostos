@@ -1,4 +1,4 @@
-// chartSetup.js - Wraps Chart.js initialization and updates
+// chartSetup.js - wrapper dos gráficos
 let growthChartInstance = null;
 let breakdownChartInstance = null;
 
@@ -13,7 +13,7 @@ export function renderCharts(schedule, breakdown) {
     
     if (!growthCtx || !breakdownCtx) return;
 
-    // --- Growth Chart (Line/Bar) ---
+    // --- Gráfico de barra (evolução temporal) ---
     const labels = schedule.map(item => `Ano ${Math.round(item.year)}`);
     const principalData = schedule.map(item => item.totalPrincipal);
     const interestData = schedule.map(item => item.cumulativeInterest);
@@ -85,7 +85,7 @@ export function renderCharts(schedule, breakdown) {
         }
     });
 
-    // --- Breakdown Chart (Pie) ---
+    // --- Gráfico de pizza (resumo dos valores) ---
     if (breakdownChartInstance) {
         breakdownChartInstance.destroy();
     }
@@ -97,9 +97,9 @@ export function renderCharts(schedule, breakdown) {
             datasets: [{
                 data: [breakdown.principal, breakdown.interest, breakdown.tax],
                 backgroundColor: [
-                    'rgba(59, 130, 246, 0.8)', // Blue
-                    'rgba(16, 185, 129, 0.8)', // Green
-                    'rgba(245, 158, 11, 0.8)'  // Orange/Warning for tax
+                    'rgba(59, 130, 246, 0.8)', // Investimento
+                    'rgba(16, 185, 129, 0.8)', // Juros recebidos
+                    'rgba(245, 158, 11, 0.8)'  // Impostos
                 ],
                 borderColor: [
                     'rgba(59, 130, 246, 1)',

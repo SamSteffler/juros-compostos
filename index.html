@@ -3,7 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Juros Compostos</title>
-    <meta name="description" content="Uma calculadora de juros compostos completa.">
+    <meta name="description" content="Calculadora de juros compostos, juros simples e meta de tempo e de taxa altamente personalizável">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,10 +35,10 @@
         </div>
 
         <main class="app-content">
-            <!-- Left Column: Inputs -->
+            <!-- Entrada -->
             <section class="input-section glass-panel">
                 
-                <!-- Compound Interest Form -->
+                <!-- Juros compostos -->
                 <form id="compound-interest-form" class="calculator-form active">
                     <div class="form-group">
                         <label for="ci-principal">Capital Inicial (R$)</label>
@@ -143,7 +143,7 @@
                     <button type="submit" class="btn-primary">Calcular</button>
                 </form>
 
-                <!-- Simple Interest Form -->
+                <!-- Juros simples -->
                 <form id="simple-interest-form" class="calculator-form hidden">
                     <div class="form-group">
                         <label for="si-principal">Capital (R$)</label>
@@ -216,7 +216,7 @@
                     <button type="submit" class="btn-primary">Calcular</button>
                 </form>
 
-                <!-- Time to Goal Form -->
+                <!-- Meta de tempo -->
                 <form id="time-to-goal-form" class="calculator-form hidden">
                     <div class="form-group">
                         <label for="tg-target">Valor da Meta (R$)</label>
@@ -289,7 +289,7 @@
                     <button type="submit" class="btn-primary">Calcular</button>
                 </form>
 
-                <!-- Rate to Goal Form -->
+                <!-- Meta de taxa -->
                 <form id="rate-to-goal-form" class="calculator-form hidden">
                     <div class="form-group">
                         <label for="rg-target">Valor da Meta (R$)</label>
@@ -369,7 +369,7 @@
 
             </section>
 
-            <!-- Right Column: Results & Charts -->
+            <!-- Resultados -->
             <section class="results-section">
                 
                 <div id="print-report-header" class="hidden">
@@ -380,7 +380,7 @@
                     <div class="divider">Resultados</div>
                 </div>
 
-                <!-- Summary Cards -->
+                <!-- Sumário -->
                 <div class="summary-cards">
                     <div class="card glass-panel highlight">
                         <h3>Montante Líquido</h3>
@@ -409,13 +409,13 @@
                     </div>
                 </div>
 
-                <!-- Goal Results Panel (Hidden by default) -->
+                <!-- Card de meta -->
                 <div id="goal-result-panel" class="glass-panel hidden highlight-panel">
                     <h3 id="goal-result-title">Tempo Necessário</h3>
                     <div class="value massive" id="goal-result-value">0 Anos</div>
                 </div>
 
-                <!-- Charts Container -->
+                <!-- Gráficos -->
                 <div class="charts-container glass-panel">
                     <div class="chart-header">
                         <h2>Evolução e Distribuição</h2>
@@ -455,7 +455,7 @@
         </nav>
     </div>
 
-    <!-- Application Logic -->
+    <!-- Script -->
     <script src="js/main.js?v=7"></script>
 </body>
 </html>
