@@ -1,4 +1,4 @@
-const CACHE_NAME = 'juros-compostos-v1';
+const CACHE_NAME = 'juros-compostos-v14';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

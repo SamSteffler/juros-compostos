@@ -485,6 +485,61 @@ document.addEventListener('DOMContentLoaded', () => {
     
     fetchMarketRates();
 
+    // --- Config and State for UI Enhancements ---
+    let lastCalculationResult = null;
+
+    function parseCurrencyToFloat(str) {
+        if (!str) return 0;
+        const cleanStr = str.replace(/\D/g, '');
+        if (!cleanStr) return 0;
+        return parseFloat(cleanStr) / 100;
+    }
+
+    function formatCurrencyBRL(value) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    }
+
+    const currencyInputIds = [
+        'ci-principal', 'ci-deposit',
+        'si-principal', 'si-deposit',
+        'tg-target', 'tg-principal', 'tg-deposit',
+        'rg-target', 'rg-principal', 'rg-deposit'
+    ];
+
+    currencyInputIds.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            const initialVal = parseFloat(input.value) || 0;
+            input.value = formatCurrencyBRL(initialVal);
+            
+            input.addEventListener('input', (e) => {
+                let digits = e.target.value.replace(/\D/g, '');
+                if (!digits) digits = '0';
+                const floatVal = parseFloat(digits) / 100;
+                e.target.value = formatCurrencyBRL(floatVal);
+            });
+        }
+    });
+
+    const calculatorDetails = {
+        'compound-interest': {
+            title: "Juros Compostos",
+            info: "Calcula o crescimento de um investimento onde os juros de cada período são somados ao capital e passam a render juros no período seguinte (efeito bola de neve). Ideal para investimentos de médio e longo prazo, como Tesouro Direto, CDB e poupança."
+        },
+        'simple-interest': {
+            title: "Juros Simples",
+            info: "Calcula o rendimento onde os juros incidem apenas sobre o valor inicial (capital principal) ao longo de todo o tempo. A taxa não se acumula sobre os juros anteriores. Comum em empréstimos de curto prazo e parcelamentos simples."
+        },
+        'time-to-goal': {
+            title: "Tempo para Meta",
+            info: "Descobre quanto tempo (em meses e anos) será necessário poupar e investir para atingir um valor final desejado (sua meta), considerando o seu capital inicial, aportes periódicos e taxa de rentabilidade estimada."
+        },
+        'rate-to-goal': {
+            title: "Taxa para Meta",
+            info: "Calcula qual deve ser a taxa de juros necessária (anual ou mensal) para alcançar o seu objetivo financeiro dentro do prazo estipulado, considerando seu capital inicial e aportes periódicos."
+        }
+    };
+
     // --- Abas ---
     const navBtns = document.querySelectorAll('.nav-btn');
     const forms = document.querySelectorAll('.calculator-form');
@@ -496,7 +551,8 @@ document.addEventListener('DOMContentLoaded', () => {
             navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            const targetId = btn.getAttribute('data-target') + '-form';
+            const targetKey = btn.getAttribute('data-target');
+            const targetId = targetKey + '-form';
             forms.forEach(f => {
                 if (f.id === targetId) f.classList.add('active');
                 else f.classList.remove('active');
@@ -511,10 +567,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 goalPanel.classList.add('hidden');
             }
 
+            // Update Current Title
+            const titleEl = document.getElementById('current-calculator-title');
+            if (titleEl && calculatorDetails[targetKey]) {
+                titleEl.textContent = calculatorDetails[targetKey].title;
+            }
+
+            // Reset Info Card visibility on switch
+            const infoCard = document.getElementById('calculator-info-card');
+            if (infoCard) {
+                infoCard.classList.add('hidden');
+            }
+
             document.getElementById(targetId).dispatchEvent(new Event('submit'));
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
+
+    // --- Info Button / Card Toggle ---
+    const btnInfo = document.getElementById('btn-info-calculator');
+    const infoCard = document.getElementById('calculator-info-card');
+    const infoText = document.getElementById('calculator-info-text');
+
+    if (btnInfo && infoCard && infoText) {
+        btnInfo.addEventListener('click', () => {
+            const activeBtn = document.querySelector('.nav-btn.active');
+            if (activeBtn) {
+                const targetKey = activeBtn.getAttribute('data-target');
+                if (calculatorDetails[targetKey]) {
+                    infoText.textContent = calculatorDetails[targetKey].info;
+                    infoCard.classList.toggle('hidden');
+                }
+            }
+        });
+    }
 
     // --- Formulários ---
     const ciForm = document.getElementById('compound-interest-form');
@@ -561,12 +647,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ci-tax-preset').addEventListener('change', (e) => {
         const rateGroup = document.getElementById('ci-tax-rate-group');
         const annualGroup = document.getElementById('ci-tax-annual-group');
+        const presetGroup = e.target.closest('.form-group');
         if (e.target.value === 'manual') {
             rateGroup.style.display = 'flex';
             annualGroup.style.display = 'flex';
+            if (presetGroup) presetGroup.classList.remove('full-width');
         } else {
             rateGroup.style.display = 'none';
             annualGroup.style.display = 'none';
+            if (presetGroup) presetGroup.classList.add('full-width');
         }
         if (ciForm.checkValidity()) handleCalculation(ciForm.id);
     });
@@ -587,7 +676,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (preset && rateGroup) {
             preset.addEventListener('change', (e) => {
-                rateGroup.style.display = e.target.value === 'manual' ? 'flex' : 'none';
+                const presetGroup = e.target.closest('.form-group');
+                if (e.target.value === 'manual') {
+                    rateGroup.style.display = 'flex';
+                    if (presetGroup) presetGroup.classList.remove('full-width');
+                } else {
+                    rateGroup.style.display = 'none';
+                    if (presetGroup) presetGroup.classList.add('full-width');
+                }
                 if(document.getElementById(formId).checkValidity()) handleCalculation(formId);
             });
         }
@@ -596,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Calcula tudo ---
     function handleCalculation(formId) {
         if (formId === 'compound-interest-form') {
-            const principal = parseFloat(document.getElementById('ci-principal').value);
+            const principal = parseCurrencyToFloat(document.getElementById('ci-principal').value);
             const rateType = document.getElementById('ci-rate-type').value;
             let userRate = parseFloat(document.getElementById('ci-rate').value);
             
@@ -618,7 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const years = userYears / timeFreq;
             const compoundFreq = parseInt(document.getElementById('ci-compound-freq').value);
             const hasDeposit = document.getElementById('ci-has-deposit').checked;
-            const depositAmount = hasDeposit ? (parseFloat(document.getElementById('ci-deposit').value) || 0) : 0;
+            const depositAmount = hasDeposit ? (parseCurrencyToFloat(document.getElementById('ci-deposit').value) || 0) : 0;
             const depositFreq = parseInt(document.getElementById('ci-deposit-freq').value);
             const depositTiming = document.getElementById('ci-deposit-timing').checked;
             
@@ -669,8 +765,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 tax: result.totalTax
             });
 
+            lastCalculationResult = {
+                title: "Juros Compostos",
+                schedule: result.schedule
+            };
+
         } else if (formId === 'simple-interest-form') {
-            const principal = parseFloat(document.getElementById('si-principal').value);
+            const principal = parseCurrencyToFloat(document.getElementById('si-principal').value);
             const rateType = document.getElementById('si-rate-type').value;
             let userRate = parseFloat(document.getElementById('si-rate').value);
             
@@ -688,7 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const timeFreq = parseInt(document.getElementById('si-time-freq').value);
             const years = userYears / timeFreq;
             const hasDeposit = document.getElementById('si-has-deposit').checked;
-            const depositAmount = hasDeposit ? (parseFloat(document.getElementById('si-deposit').value) || 0) : 0;
+            const depositAmount = hasDeposit ? (parseCurrencyToFloat(document.getElementById('si-deposit').value) || 0) : 0;
             const depositFreq = parseInt(document.getElementById('si-deposit-freq').value);
 
             const result = calculateSimpleInterest(principal, rate, years, depositAmount, depositFreq);
@@ -704,11 +805,16 @@ document.addEventListener('DOMContentLoaded', () => {
             
             renderCharts(result.schedule, { principal: result.totalPrincipal, interest: result.totalInterest, tax: 0 });
 
+            lastCalculationResult = {
+                title: "Juros Simples",
+                schedule: result.schedule
+            };
+
         } else if (formId === 'time-to-goal-form') {
-            const target = parseFloat(document.getElementById('tg-target').value);
-            const principal = parseFloat(document.getElementById('tg-principal').value);
+            const target = parseCurrencyToFloat(document.getElementById('tg-target').value);
+            const principal = parseCurrencyToFloat(document.getElementById('tg-principal').value);
             const hasDeposit = document.getElementById('tg-has-deposit').checked;
-            const deposit = hasDeposit ? (parseFloat(document.getElementById('tg-deposit').value) || 0) : 0;
+            const deposit = hasDeposit ? (parseCurrencyToFloat(document.getElementById('tg-deposit').value) || 0) : 0;
             const depositFreq = parseInt(document.getElementById('tg-deposit-freq').value);
             const userRate = parseFloat(document.getElementById('tg-rate').value);
             const rateFreq = parseInt(document.getElementById('tg-rate-freq').value);
@@ -751,13 +857,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     taxRate: taxRateToChart, taxAnnually: false
                 });
                 renderCharts(result.schedule, { principal: result.totalPrincipal, interest: result.totalInterest, tax: result.totalTax });
+                
+                lastCalculationResult = {
+                    title: "Tempo para Meta",
+                    schedule: result.schedule
+                };
             }
 
         } else if (formId === 'rate-to-goal-form') {
-            const target = parseFloat(document.getElementById('rg-target').value);
-            const principal = parseFloat(document.getElementById('rg-principal').value);
+            const target = parseCurrencyToFloat(document.getElementById('rg-target').value);
+            const principal = parseCurrencyToFloat(document.getElementById('rg-principal').value);
             const hasDeposit = document.getElementById('rg-has-deposit').checked;
-            const deposit = hasDeposit ? (parseFloat(document.getElementById('rg-deposit').value) || 0) : 0;
+            const deposit = hasDeposit ? (parseCurrencyToFloat(document.getElementById('rg-deposit').value) || 0) : 0;
             const depositFreq = parseInt(document.getElementById('rg-deposit-freq').value);
             const userYears = parseFloat(document.getElementById('rg-years').value);
             const timeFreq = parseInt(document.getElementById('rg-time-freq').value);
@@ -800,6 +911,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 taxRate: taxRateToChart, taxAnnually: false
             });
             renderCharts(result.schedule, { principal: result.totalPrincipal, interest: result.totalInterest, tax: result.totalTax });
+            
+            lastCalculationResult = {
+                title: "Taxa para Meta",
+                schedule: result.schedule
+            };
         }
         
         populatePrintParameters(formId);
@@ -866,6 +982,145 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         window.print();
+    });
+
+    // --- CSV Export Functionality ---
+    function exportToCSV() {
+        if (!lastCalculationResult || !lastCalculationResult.schedule || lastCalculationResult.schedule.length === 0) {
+            alert("Nenhum dado disponível para exportação. Faça uma simulação primeiro.");
+            return;
+        }
+
+        const title = lastCalculationResult.title;
+        const schedule = lastCalculationResult.schedule;
+
+        let csvContent = "\ufeff"; // BOM for UTF-8 compatibility in Excel
+        csvContent += `Relatorio:;${title}\n`;
+        csvContent += `Gerado em:;${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}\n\n`;
+        csvContent += "Periodo;Ano;Capital Investido (R$);Juros Acumulados (R$);Imposto Acumulado (R$);Saldo Liquido (R$)\n";
+
+        schedule.forEach(item => {
+            const periodLabel = item.month !== undefined ? `Mes ${item.month}` : `Ano ${Math.round(item.year)}`;
+            const yearVal = item.year !== undefined ? item.year.toFixed(2).replace('.', ',') : (item.month / 12).toFixed(2).replace('.', ',');
+            const principal = item.totalPrincipal.toFixed(2).replace('.', ',');
+            const interest = item.cumulativeInterest.toFixed(2).replace('.', ',');
+            const tax = (item.cumulativeTax || 0).toFixed(2).replace('.', ',');
+            const balance = item.balance.toFixed(2).replace('.', ',');
+
+            csvContent += `${periodLabel};${yearVal};${principal};${interest};${tax};${balance}\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `simulacao-${title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    const btnExportCSV = document.getElementById('btn-export-csv');
+    if (btnExportCSV) {
+        btnExportCSV.addEventListener('click', exportToCSV);
+    }
+
+    // --- About Modal and Sharing Logic ---
+    const btnAbout = document.getElementById('btn-about');
+    const aboutModal = document.getElementById('about-modal');
+    const modalClose = document.getElementById('modal-close');
+    const btnShare = document.getElementById('modal-btn-share');
+
+    if (btnAbout && aboutModal && modalClose) {
+        // Open Modal
+        btnAbout.addEventListener('click', () => {
+            aboutModal.classList.add('active');
+        });
+
+        // Close Modal via button
+        modalClose.addEventListener('click', () => {
+            aboutModal.classList.remove('active');
+        });
+
+        // Close Modal by clicking outside content
+        aboutModal.addEventListener('click', (e) => {
+            if (e.target === aboutModal) {
+                aboutModal.classList.remove('active');
+            }
+        });
+    }
+
+    if (btnShare) {
+        btnShare.addEventListener('click', () => {
+            const shareData = {
+                title: 'Calculadora de Juros Compostos',
+                text: 'Confira esta calculadora de juros simples, compostos e simulação de metas financeira, 100% offline e sem anúncios!',
+                url: window.location.origin + window.location.pathname
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData)
+                    .catch((err) => console.log('Erro ao compartilhar:', err));
+            } else {
+                // Fallback: Copy link to clipboard
+                const shareUrl = window.location.origin + window.location.pathname;
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    const originalText = btnShare.textContent;
+                    btnShare.textContent = "Link Copiado!";
+                    btnShare.style.backgroundColor = "var(--accent-success)";
+                    btnShare.style.borderColor = "var(--accent-success)";
+                    
+                    setTimeout(() => {
+                        btnShare.textContent = originalText;
+                        btnShare.style.backgroundColor = "";
+                        btnShare.style.borderColor = "";
+                    }, 2000);
+                }).catch(err => {
+                    console.error("Erro ao copiar link:", err);
+                });
+            }
+        });
+    }
+
+    // --- PWA Installation Prompt ---
+    let deferredPrompt = null;
+    const btnInstall = document.getElementById('modal-btn-install');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent Chrome 67 and earlier from automatically showing the prompt
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+        // Update UI notify the user they can install the PWA
+        if (btnInstall) {
+            btnInstall.classList.remove('hidden');
+        }
+    });
+
+    if (btnInstall) {
+        btnInstall.addEventListener('click', () => {
+            if (deferredPrompt) {
+                // Show the install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                    btnInstall.classList.add('hidden');
+                });
+            }
+        });
+    }
+
+    window.addEventListener('appinstalled', (evt) => {
+        console.log('PWA foi instalado com sucesso!');
+        if (btnInstall) {
+            btnInstall.classList.add('hidden');
+        }
     });
 
     handleCalculation('compound-interest-form');

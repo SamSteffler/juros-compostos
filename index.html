@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css?v=7">
+    <link rel="stylesheet" href="css/style.css?v=13">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -28,6 +28,13 @@
                 </svg>
                 <h1>Juros Compostos</h1>
             </div>
+            <button type="button" id="btn-about" class="btn-about" aria-label="Sobre este aplicativo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            </button>
         </header>
         
         <div class="market-rates-banner" id="market-rates-banner">
@@ -35,14 +42,27 @@
         </div>
 
         <main class="app-content">
-            <!-- Entrada -->
+            <!-- Left Column: Inputs -->
             <section class="input-section glass-panel">
+                <div class="calculator-title-container">
+                    <h2 id="current-calculator-title" class="calculator-title">Juros Compostos</h2>
+                    <button type="button" id="btn-info-calculator" class="btn-info" aria-label="Informações sobre esta calculadora">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div id="calculator-info-card" class="info-card hidden">
+                    <p id="calculator-info-text"></p>
+                </div>
                 
-                <!-- Juros compostos -->
+                <!-- Compound Interest Form -->
                 <form id="compound-interest-form" class="calculator-form active">
                     <div class="form-group">
                         <label for="ci-principal">Capital Inicial (R$)</label>
-                        <input type="number" id="ci-principal" value="10000" min="0" step="100" required>
+                        <input type="text" inputmode="numeric" id="ci-principal" value="10000" required>
                     </div>
                     <div class="form-group">
                         <label for="ci-rate-type">Tipo de Taxa</label>
@@ -102,7 +122,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="ci-deposit">Valor do Aporte (R$)</label>
-                                <input type="number" id="ci-deposit" value="500" min="0" step="50">
+                                <input type="text" inputmode="numeric" id="ci-deposit" value="500">
                             </div>
                             <div class="form-group">
                                 <label for="ci-deposit-freq">Frequência</label>
@@ -140,14 +160,14 @@
                         <label for="ci-tax-annual">Descontar impostos anualmente (vs. no final)</label>
                     </div>
 
-                    <button type="submit" class="btn-primary">Calcular</button>
+                    <!--<button type="submit" class="btn-primary">Calcular</button>-->
                 </form>
 
                 <!-- Juros simples -->
                 <form id="simple-interest-form" class="calculator-form hidden">
                     <div class="form-group">
                         <label for="si-principal">Capital (R$)</label>
-                        <input type="number" id="si-principal" value="10000" min="0" step="100" required>
+                        <input type="text" inputmode="numeric" id="si-principal" value="10000" required>
                     </div>
                     <div class="form-group">
                         <label for="si-rate-type">Tipo de Taxa</label>
@@ -198,7 +218,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="si-deposit">Valor do Aporte (R$)</label>
-                                <input type="number" id="si-deposit" value="500" min="0" step="50">
+                                <input type="text" inputmode="numeric" id="si-deposit" value="500">
                             </div>
                             <div class="form-group">
                                 <label for="si-deposit-freq">Frequência</label>
@@ -213,18 +233,18 @@
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn-primary">Calcular</button>
+                   <!--<button type="submit" class="btn-primary">Calcular</button>-->
                 </form>
 
                 <!-- Meta de tempo -->
                 <form id="time-to-goal-form" class="calculator-form hidden">
                     <div class="form-group">
                         <label for="tg-target">Valor da Meta (R$)</label>
-                        <input type="number" id="tg-target" value="1000000" min="0" step="1000" required>
+                        <input type="text" inputmode="numeric" id="tg-target" value="1000000" required>
                     </div>
                     <div class="form-group">
                         <label for="tg-principal">Capital Inicial (R$)</label>
-                        <input type="number" id="tg-principal" value="10000" min="0" step="100" required>
+                        <input type="text" inputmode="numeric" id="tg-principal" value="10000" required>
                     </div>
                     <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
                         <input type="checkbox" id="tg-has-deposit" checked>
@@ -234,7 +254,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="tg-deposit">Valor do Aporte (R$)</label>
-                                <input type="number" id="tg-deposit" value="500" min="0" step="50">
+                                <input type="text" inputmode="numeric" id="tg-deposit" value="500">
                             </div>
                             <div class="form-group">
                                 <label for="tg-deposit-freq">Freq. do Aporte</label>
@@ -286,18 +306,18 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary">Calcular</button>
+                    <!--<button type="submit" class="btn-primary">Calcular</button>-->
                 </form>
 
                 <!-- Meta de taxa -->
                 <form id="rate-to-goal-form" class="calculator-form hidden">
                     <div class="form-group">
                         <label for="rg-target">Valor da Meta (R$)</label>
-                        <input type="number" id="rg-target" value="1000000" min="0" step="1000" required>
+                        <input type="text" inputmode="numeric" id="rg-target" value="1000000" required>
                     </div>
                     <div class="form-group">
                         <label for="rg-principal">Capital Inicial (R$)</label>
-                        <input type="number" id="rg-principal" value="10000" min="0" step="100" required>
+                        <input type="text" inputmode="numeric" id="rg-principal" value="10000" required>
                     </div>
                     <div class="form-group checkbox-group" style="margin-bottom: 1rem;">
                         <input type="checkbox" id="rg-has-deposit" checked>
@@ -307,7 +327,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="rg-deposit">Valor do Aporte (R$)</label>
-                                <input type="number" id="rg-deposit" value="500" min="0" step="50">
+                                <input type="text" inputmode="numeric" id="rg-deposit" value="500">
                             </div>
                             <div class="form-group">
                                 <label for="rg-deposit-freq">Freq. do Aporte</label>
@@ -364,7 +384,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary">Calcular</button>
+                    <!--<button type="submit" class="btn-primary">Calcular</button>-->
                 </form>
 
             </section>
@@ -419,8 +439,9 @@
                 <div class="charts-container glass-panel">
                     <div class="chart-header">
                         <h2>Evolução e Distribuição</h2>
-                        <div class="chart-actions">
-                            <button id="btn-export-pdf" class="btn-secondary" title="Export as PDF/Print">Exportar Relatório</button>
+                        <div class="chart-actions" style="display: flex; gap: 0.5rem;">
+                            <button id="btn-export-csv" class="btn-secondary" title="Exportar dados para Excel (CSV)">Exportar CSV</button>
+                            <button id="btn-export-pdf" class="btn-secondary" title="Exportar Relatório / PDF">Exportar Relatório</button>
                         </div>
                     </div>
                     <div class="charts-grid">
@@ -437,25 +458,72 @@
 
         <nav class="tools-nav bottom-nav">
             <button class="nav-btn active" data-target="compound-interest">
-                <div class="icon-placeholder"></div>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 6H13V18H11V6Z" fill="currentColor" />
+                    <path d="M7 13H9V18H7V13Z" fill="currentColor" />
+                    <path d="M15 9H17V18H15V9Z" fill="currentColor" />
+                </svg>
                 <span>Compostos</span>
             </button>
             <button class="nav-btn" data-target="simple-interest">
-                <div class="icon-placeholder"></div>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 6H13V18H11V6Z" fill="currentColor" />
+                    <path d="M7 13H9V18H7V13Z" fill="currentColor" />
+                    <path d="M15 9H17V18H15V9Z" fill="currentColor" />
+                </svg>
                 <span>Simples</span>
             </button>
             <button class="nav-btn" data-target="time-to-goal">
-                <div class="icon-placeholder"></div>
-                <span>T. Meta</span>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M8 9C7.44772 9 7 9.44771 7 10C7 10.5523 7.44772 11 8 11H16C16.5523 11 17 10.5523 17 10C17 9.44771 16.5523 9 16 9H8Z"
+                        fill="currentColor" />
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M6 3C4.34315 3 3 4.34315 3 6V18C3 19.6569 4.34315 21 6 21H18C19.6569 21 21 19.6569 21 18V6C21 4.34315 19.6569 3 18 3H6ZM5 18V7H19V18C19 18.5523 18.5523 19 18 19H6C5.44772 19 5 18.5523 5 18Z"
+                        fill="currentColor" />
+                </svg>        
+                <span>Tempo meta</span>
             </button>
             <button class="nav-btn" data-target="rate-to-goal">
-                <div class="icon-placeholder"></div>
-                <span>Taxa Meta</span>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M16.2426 6.34319C16.6331 5.95266 17.2663 5.95266 17.6568 6.34319C18.0474 6.73371 18.0474 7.36688 17.6568 7.7574L7.75734 17.6569C7.36681 18.0474 6.73365 18.0474 6.34313 17.6569C5.9526 17.2664 5.9526 16.6332 6.34313 16.2427L16.2426 6.34319Z"
+                        fill="currentColor" />
+                    <path
+                        d="M9.87866 9.87872C9.09761 10.6598 7.83128 10.6598 7.05023 9.87872C6.26918 9.09767 6.26918 7.83134 7.05023 7.05029C7.83128 6.26924 9.09761 6.26924 9.87866 7.05029C10.6597 7.83134 10.6597 9.09767 9.87866 9.87872Z"
+                        fill="currentColor" />
+                    <path
+                        d="M14.1213 16.9498C14.9023 17.7308 16.1687 17.7308 16.9497 16.9498C17.7308 16.1687 17.7308 14.9024 16.9497 14.1214C16.1687 13.3403 14.9023 13.3403 14.1213 14.1214C13.3403 14.9024 13.3403 16.1687 14.1213 16.9498Z"
+                        fill="currentColor" />
+                </svg>
+                <span>Taxa meta</span>
             </button>
         </nav>
     </div>
 
-    <!-- Script -->
-    <script src="js/main.js?v=7"></script>
+    <!-- Modal Sobre -->
+    <div id="about-modal" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2>Sobre a Calculadora</h2>
+                <button type="button" id="modal-close" class="modal-close-btn" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Uma calculadora financeira offline, sem anúncios e de código aberto, projetada para simulações rápidas e precisas de juros simples, compostos e planejamento de metas.</p>
+                <div class="modal-info-row">
+                    <span>Versão:</span>
+                    <strong>v1.0.0 (PWA)</strong>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="modal-btn-install" class="btn-primary hidden">Instalar Aplicativo</button>
+                    <button type="button" id="modal-btn-share" class="btn-primary">Compartilhar App</button>
+                    <a href="https://github.com/SamSteffler/juros-compostos#readme" target="_blank" rel="noopener" class="btn-secondary-link">Ver Código e Detalhes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script src="js/main.js?v=13"></script>
 </body>
 </html>
